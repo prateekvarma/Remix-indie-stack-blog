@@ -1,5 +1,5 @@
 import { LoaderFunction, json } from "@remix-run/node";
-import { Link, useLoaderData } from "@remix-run/react";
+import { Link, Outlet, useLoaderData } from "@remix-run/react";
 import { getPostListings } from "~/models/post.server";
 
 export const loader: LoaderFunction = async () => {
@@ -24,7 +24,9 @@ export default function AdminRoute() {
             ))}
           </ul>
         </nav>
-        <main className="col-span-4 md:col-span-3">...</main>
+        <main className="col-span-4 md:col-span-3">
+          <Outlet />
+        </main>
       </div>
     </div>
   );
