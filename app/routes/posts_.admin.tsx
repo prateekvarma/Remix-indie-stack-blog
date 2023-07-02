@@ -2,12 +2,16 @@ import { LoaderFunction, json } from "@remix-run/node";
 import { Link, Outlet, useLoaderData } from "@remix-run/react";
 import { getPostListings } from "~/models/post.server";
 
+type LoaderData = {
+  posts: Awaited<ReturnType<typeof getPostListings>>;
+};
+
 export const loader: LoaderFunction = async () => {
-  return json({ posts: await getPostListings() });
+  return json<LoaderData>({ posts: await getPostListings() });
 };
 
 export default function AdminRoute() {
-  const { posts } = useLoaderData();
+  const { posts } = useLoaderData() as LoaderData;
 
   return (
     <div className="mx-auto max-w-4xl">
