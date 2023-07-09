@@ -66,7 +66,7 @@ export function useUser(): User {
   return maybeUser;
 }
 
-export function useOptionsAdminUser() {
+export function useOptionalAdminUser() {
   const user = useOptionalUser();
   if (!user) return null;
   if (user.email !== ENV.ADMIN_EMAIL) return null;
