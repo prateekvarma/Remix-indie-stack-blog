@@ -2,7 +2,7 @@ import { json } from "@remix-run/node";
 import type { LoaderFunction } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { getPostListings } from "~/models/post.server";
-import { useOptionalUser } from "~/utils";
+import { useOptionalAdminUser } from "~/utils";
 
 type LoaderData = {
   posts: Awaited<ReturnType<typeof getPostListings>>;
@@ -15,14 +15,12 @@ export const loader: LoaderFunction = async () => {
 
 export default function PostsRoute() {
   const { posts } = useLoaderData() as LoaderData;
-  const user = useOptionalUser();
-
-  const isAdmin = user?.email === ENV.ADMIN_EMAIL;
+  const adminUser = useOptionalAdminUser();
 
   return (
     <main>
       <h1>Posts</h1>
-      {isAdmin ? (
+      {adminUser ? (
         <Link to="admin" className="text-red-600 underline">
           Admin
         </Link>
