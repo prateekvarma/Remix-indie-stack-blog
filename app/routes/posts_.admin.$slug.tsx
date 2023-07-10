@@ -5,9 +5,12 @@ import { createPost } from "~/models/post.server";
 import invariant from "tiny-invariant";
 import { requireAdminUser } from "~/session.server";
 
-export const loader: LoaderFunction = async ({ request }) => {
+export const loader: LoaderFunction = async ({ request, params }) => {
   await requireAdminUser(request);
-  return json({}) //loader needs to return something
+  if (params.slug === "new") {
+    return json({}); //loader needs to return something
+  }
+  return json({ post: null });
 };
 
 type ActionData =
@@ -18,7 +21,7 @@ type ActionData =
     }
   | undefined;
 
-export const action: ActionFunction = async ({ request }) => {
+export const action: ActionFunction = async ({ request, params }) => {
   await requireAdminUser(request);
   const formData = Object.fromEntries(await request.formData());
 
@@ -42,7 +45,12 @@ export const action: ActionFunction = async ({ request }) => {
   invariant(typeof slug === "string", "slug must be a string");
   invariant(typeof markdown === "string", "markdown must be a string");
 
-  await createPost({ title, slug, markdown });
+  if(params.slug === 'new') {
+    await createPost({ title, slug, markdown });
+  } else {
+    // TODO update post
+  }
+
 
   return redirect("/posts/admin");
 };
