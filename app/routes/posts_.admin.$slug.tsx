@@ -1,7 +1,12 @@
-import { Form, useActionData, useLoaderData, useNavigation } from "@remix-run/react";
+import {
+  Form,
+  useActionData,
+  useLoaderData,
+  useNavigation,
+} from "@remix-run/react";
 import { json, redirect } from "@remix-run/node";
 import type { ActionFunction, LoaderFunction } from "@remix-run/node";
-import { createPost, getPost, updatePost } from "~/models/post.server";
+import { createPost, deletePost, getPost, updatePost } from "~/models/post.server";
 import invariant from "tiny-invariant";
 import { requireAdminUser } from "~/session.server";
 
@@ -10,7 +15,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
   if (params.slug === "new") {
     return json({}); //loader needs to return something
   }
-  const post = await getPost(params.slug)
+  const post = await getPost(params.slug);
   return json({ post });
 };
 
@@ -25,6 +30,12 @@ type ActionData =
 export const action: ActionFunction = async ({ request, params }) => {
   await requireAdminUser(request);
   const formData = Object.fromEntries(await request.formData());
+  const intent = formData.intent;
+
+  if (intent === "delete") {
+    await deletePost(params.slug);
+    return redirect("/posts/admin");
+  }
 
   const title = formData.title;
   const slug = formData.slug;
@@ -46,12 +57,11 @@ export const action: ActionFunction = async ({ request, params }) => {
   invariant(typeof slug === "string", "slug must be a string");
   invariant(typeof markdown === "string", "markdown must be a string");
 
-  if(params.slug === 'new') {
+  if (params.slug === "new") {
     await createPost({ title, slug, markdown });
   } else {
-    await updatePost(params.slug, { title, slug, markdown })
+    await updatePost(params.slug, { title, slug, markdown });
   }
-
 
   return redirect("/posts/admin");
 };
@@ -59,24 +69,30 @@ export const action: ActionFunction = async ({ request, params }) => {
 const inputClassName = `w-full rounded border border-gray-500 px-2 py-1 text-lg`;
 
 export default function NewPostRoute() {
-  const data = useLoaderData()
+  const data = useLoaderData();
   const errors = useActionData() as ActionData;
 
   const transition = useNavigation();
   const isCreating = transition.state === "submitting";
+  const isDeleting = transition.state === "submitting";
   //const isCreating = transition?.formData.get('intent') === 'create';
   const isUpdating = transition?.formData === null;
   const isNewPost = !data.post;
 
   return (
-    <Form method="post" key={data.post?.slug ?? 'new'}>
+    <Form method="post" key={data.post?.slug ?? "new"}>
       <p>
         <label>
           Post Title:{" "}
           {errors?.title ? (
             <em className="text-red-600">{errors.title}</em>
           ) : null}
-          <input type="text" name="title" className={inputClassName} defaultValue={data.post?.title} />
+          <input
+            type="text"
+            name="title"
+            className={inputClassName}
+            defaultValue={data.post?.title}
+          />
         </label>
       </p>
       <p>
@@ -85,7 +101,12 @@ export default function NewPostRoute() {
           {errors?.slug ? (
             <em className="text-red-600">{errors.slug}</em>
           ) : null}
-          <input type="text" name="slug" className={inputClassName} defaultValue={data.post?.slug} />
+          <input
+            type="text"
+            name="slug"
+            className={inputClassName}
+            defaultValue={data.post?.slug}
+          />
         </label>
       </p>
       <p>
@@ -101,18 +122,29 @@ export default function NewPostRoute() {
           defaultValue={data.post?.markdown}
         />
       </p>
-      <p className="text-right">
+      <div className="flex justify-end gap-4">
+        {isNewPost ? null : (
+          <button
+            type="submit"
+            name="intent"
+            value="delete"
+            className="bg-red-500 px-4 py-2 text-white hover:to-red-800"
+            disabled={isDeleting}
+          >
+            {isDeleting ? "Deleting..." : "Delete"}
+          </button>
+        )}
         <button
           type="submit"
           name="intent"
-          value={isNewPost ? 'create' : 'update'}
+          value="delete"
           className="bg-blue-500 px-4 py-2 text-white hover:to-blue-800"
           disabled={isCreating || isUpdating}
         >
           {isNewPost ? (isCreating ? "Creating..." : "Create Post") : null}
-          {isNewPost ? null : (isUpdating ? "Updating..." : "Update")}
+          {isNewPost ? null : isUpdating ? "Updating..." : "Update"}
         </button>
-      </p>
+      </div>
     </Form>
   );
 }
