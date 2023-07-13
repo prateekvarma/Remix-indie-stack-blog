@@ -6,17 +6,22 @@ import {
 } from "@remix-run/react";
 import { json, redirect } from "@remix-run/node";
 import type { ActionFunction, LoaderFunction } from "@remix-run/node";
-import { createPost, deletePost, getPost, updatePost } from "~/models/post.server";
+import {  createPost, deletePost, getPost, updatePost } from "~/models/post.server";
 import invariant from "tiny-invariant";
 import { requireAdminUser } from "~/session.server";
+import type { Post } from "~/models/post.server";
+
+
+type LoaderData = { post?:Post }
 
 export const loader: LoaderFunction = async ({ request, params }) => {
   await requireAdminUser(request);
+  invariant(params.slug, 'slug is required')
   if (params.slug === "new") {
-    return json({}); //loader needs to return something
+    return json<LoaderData>({}); //loader needs to return something
   }
   const post = await getPost(params.slug);
-  return json({ post });
+  return json<LoaderData>({ post });
 };
 
 type ActionData =
@@ -29,6 +34,7 @@ type ActionData =
 
 export const action: ActionFunction = async ({ request, params }) => {
   await requireAdminUser(request);
+  invariant(params.slug, 'slug is required')
   const formData = Object.fromEntries(await request.formData());
   const intent = formData.intent;
 
@@ -69,7 +75,7 @@ export const action: ActionFunction = async ({ request, params }) => {
 const inputClassName = `w-full rounded border border-gray-500 px-2 py-1 text-lg`;
 
 export default function NewPostRoute() {
-  const data = useLoaderData();
+  const data = useLoaderData() as LoaderData;
   const errors = useActionData() as ActionData;
 
   const transition = useNavigation();
