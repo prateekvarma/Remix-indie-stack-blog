@@ -1,8 +1,10 @@
 import {
   Form,
+  isRouteErrorResponse,
   useActionData,
   useLoaderData,
   useNavigation,
+  useRouteError,
 } from "@remix-run/react";
 import { json, redirect } from "@remix-run/node";
 import type { ActionFunction, LoaderFunction } from "@remix-run/node";
@@ -21,6 +23,11 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     return json<LoaderData>({}); //loader needs to return something
   }
   const post = await getPost(params.slug);
+
+  if(!post) {
+    throw new Response('Not Found', { status: 404 });
+  }
+
   return json<LoaderData>({ post });
 };
 
@@ -153,4 +160,15 @@ export default function NewPostRoute() {
       </div>
     </Form>
   );
+}
+
+export function ErrorBoundary() {
+  const error = useRouteError()
+
+  if(isRouteErrorResponse(error)) {
+    if(error.status === 404) {
+      return <div>Uh oh! Post does not exist, error 404!</div>
+    }
+    throw new Error(`Unsupported thrown response status code: ${error.status}`)
+  }
 }
